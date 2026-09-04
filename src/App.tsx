@@ -7,17 +7,13 @@ import {
 } from 'react'
 import './App.css'
 
+import { ProductDetails } from './components/ProductDetails'
 import { initialProducts } from './data/products.mock'
 import type { Product } from './types/product'
 
 /**
- * This is my Core product model.
- *
- * The application intentionally keeps the inventory domain model compact.
- * This provides enough structure for CRUD operations, stock management,
- * reporting, and persistence without introducing unnecessary complexity.
+ * Product form state used by both the create and edit workflows.
  */
-
 type ProductFormState = {
   name: string
   sku: string
@@ -27,14 +23,21 @@ type ProductFormState = {
   reorderLevel: string
 }
 
+/**
+ * Represents a pending stock movement.
+ */
 type StockAdjustmentState = {
   productId: number
   quantity: string
   direction: 'increase' | 'decrease'
 }
 
+/**
+ * Props required by the reusable product table.
+ */
 type ProductTableProps = {
   products: Product[]
+  onView: (product: Product) => void
   onDelete: (id: number) => void
   onEdit: (product: Product) => void
   onAdjustStock: (product: Product) => void
@@ -92,6 +95,9 @@ function App() {
 
   const [form, setForm] = useState<ProductFormState>(EMPTY_FORM)
   const [formError, setFormError] = useState('')
+
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null)
 
   /**
    * Persist every inventory mutation locally.
@@ -281,25 +287,42 @@ function App() {
     [closeProductForm, editingProduct, form, products],
   )
 
-  const deleteProduct = useCallback((id: number) => {
-    const product = products.find((item) => item.id === id)
+  const deleteProduct = useCallback(
+    (id: number) => {
+      const product = products.find((item) => item.id === id)
 
-    if (!product) {
-      return
-    }
+      if (!product) {
+        return
+      }
 
-    const confirmed = window.confirm(
-      `Delete "${product.name}" from the inventory?`,
-    )
+      const confirmed = window.confirm(
+        `Delete "${product.name}" from the inventory?`,
+      )
 
-    if (!confirmed) {
-      return
-    }
+      if (!confirmed) {
+        return
+      }
 
-    setProducts((current) =>
-      current.filter((product) => product.id !== id),
-    )
-  }, [products])
+      setProducts((current) =>
+        current.filter((product) => product.id !== id),
+      )
+    },
+    [products],
+  )
+
+  /**
+   * Opens the product details view.
+   */
+  const openProductDetails = useCallback((product: Product) => {
+    setSelectedProduct(product)
+  }, [])
+
+  /**
+   * Closes the product details view.
+   */
+  const closeProductDetails = useCallback(() => {
+    setSelectedProduct(null)
+  }, [])
 
   /**
    * Opens the stock adjustment workflow for a specific product.
@@ -546,6 +569,7 @@ function App() {
 
               <ProductTable
                 products={products.slice(0, 5)}
+                onView={openProductDetails}
                 onDelete={deleteProduct}
                 onEdit={openEditProductForm}
                 onAdjustStock={openStockAdjustment}
@@ -579,6 +603,7 @@ function App() {
 
             <ProductTable
               products={filteredProducts}
+              onView={openProductDetails}
               onDelete={deleteProduct}
               onEdit={openEditProductForm}
               onAdjustStock={openStockAdjustment}
@@ -600,6 +625,7 @@ function App() {
 
             <ProductTable
               products={products}
+              onView={openProductDetails}
               onDelete={deleteProduct}
               onEdit={openEditProductForm}
               onAdjustStock={openStockAdjustment}
@@ -608,6 +634,22 @@ function App() {
           </section>
         )}
       </main>
+
+      {/* Product details view */}
+      {selectedProduct && (
+        <ProductDetails
+          product={selectedProduct}
+          onClose={closeProductDetails}
+          onEdit={(product) => {
+            setSelectedProduct(null)
+            openEditProductForm(product)
+          }}
+          onAdjustStock={(product) => {
+            setSelectedProduct(null)
+            openStockAdjustment(product)
+          }}
+        />
+      )}
 
       {/* Product creation/editing modal */}
       {showProductForm && (
@@ -896,6 +938,7 @@ function App() {
 
 function ProductTable({
   products,
+  onView,
   onDelete,
   onEdit,
   onAdjustStock,
@@ -978,6 +1021,15 @@ function ProductTable({
 
                 <td>
                   <div className="table-actions">
+                    <button
+                      className="action-button"
+                      onClick={() =>
+                        onView(product)
+                      }
+                    >
+                      View
+                    </button>
+
                     <button
                       className="action-button"
                       onClick={() =>
