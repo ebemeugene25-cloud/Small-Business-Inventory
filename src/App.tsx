@@ -147,14 +147,14 @@ function App() {
   )
 
   const formatCurrency = useCallback(
-    (amount: number) =>
-      new Intl.NumberFormat('en-NG', {
-        style: 'currency',
-        currency: 'NGN',
-        maximumFractionDigits: 0,
-      }).format(amount),
-    [],
-  )
+  (amount: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(amount),
+  [],
+)
 
   const resetProductForm = useCallback(() => {
     setForm(EMPTY_FORM)
@@ -945,9 +945,9 @@ function ProductTable({
   inventoryView = false,
 }: ProductTableProps) {
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-NG', {
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'NGN',
+      currency: 'USD',
       maximumFractionDigits: 0,
     }).format(amount)
 
